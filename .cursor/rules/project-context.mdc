@@ -1,0 +1,42 @@
+---
+description: What FEEDBACKYARD is, the stack, and the folder layout. Read before changing anything.
+alwaysApply: true
+---
+
+# FEEDBACKYARD: project context
+
+A browser instrument for **internal audio feedback loops** (the "send a return track into itself" trick). The goal is weird, unpredictable sound design (noise, randomness, happy accidents), not music. The user steers the loop with knobs, records the master output, and downloads WAV takes to use as raw material in a DAW.
+
+Stack: Vite, React 18, TypeScript (strict), Tailwind CSS 3, Zustand, Web Audio API with AudioWorklet. **No audio libraries and no other runtime dependencies** (WAV is hand-written). Target: desktop Chromium.
+
+## Layout
+
+```
+public/worklets/        plain-JS AudioWorklet processors (no build step, no imports)
+src/audio/              AudioEngine singleton + one class per DSP stage
+src/audio/sources/      Source classes + the source registry (index.ts)
+src/store/              Zustand stores (params, engine status, takes, snapshots, theme)
+src/hooks/              React hooks (useParam, useFrameLoop, ...)
+src/components/ui/      Reusable HUD controls (Knob, HudButton, Panel, meters, deco)
+src/components/stages/  One panel per section (SOURCE, LOOP, MOD/CHAOS, FX, OUTPUT, RECORD/TAKES)
+src/components/layout/  App frame, header, transport bar, modals
+src/utils/dsp-math.ts   Pure math: param <-> normalized mapping, formatting, randomize/mutate
+PLAN.md                 The approved plan
+```
+
+## Signal flow
+
+```
+sources -> input -> [ DelayNode -> pitch shifter -> filter -> saturator(tanh) -> DC blocker -> reverb -> feedback gain ] -> back to the delay input
+loop tap -> dry/wet -> master -> panic gain -> limiter -> safety clip -> analysers / recorder / destination
+```
+
+The `DelayNode` is what makes the cycle legal. The loop is stereo. Its minimum delay in a cycle is one render quantum (128 samples).
+
+## Conventions
+
+- Every parameter is declared once as a `ParamDef` (`src/audio/core-params.ts` or inside a source definition). The UI, randomize, mutate, chaos, snapshots and the engine all derive from these definitions. Never hardcode a range anywhere else.
+- Zustand holds **values and locks**. The AudioEngine is not React state: components call store actions, and the store forwards to `engine.setBase(id, value)`.
+- Anything that animates at frame rate (scope, spectrum, meters, ring gauge, timers, chaos ghost markers) runs in `requestAnimationFrame` through refs and canvas or SVG attributes, never through React state.
+- The LATER version adds a file player and microphone input as new sources. Do not build upload or mic UI now, not even disabled placeholders. See `adding-a-source.mdc`.
+- `npm run build` and `npm run lint` must pass before finishing any task.

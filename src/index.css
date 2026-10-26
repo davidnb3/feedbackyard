@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * THEME TOKENS: the one place to change the palette.
+ * Space-separated RGB triplets, mapped to Tailwind colors in tailwind.config.js.
+ *   accent = the one primary color     warn = clip / panic / record / danger ONLY
+ *   data   = restrained secondary tint line = hairlines   muted = secondary text
+ */
+:root,
+[data-theme='green'] {
+  --bg: 4 7 5;
+  --panel: 7 12 8;
+  --accent: 126 230 56;
+  --ink: 214 255 186;
+  --line: 48 92 32;
+  --muted: 114 164 92;
+  --data: 78 206 188;
+  --warn: 255 90 40;
+}
+
+[data-theme='cyan'] {
+  --bg: 3 6 9;
+  --panel: 6 11 16;
+  --accent: 38 190 248;
+  --ink: 200 240 255;
+  --line: 24 84 116;
+  --muted: 98 150 176;
+  --data: 150 222 238;
+  --warn: 255 100 50;
+}
+
+[data-theme='amber'] {
+  --bg: 8 5 4;
+  --panel: 14 9 7;
+  --accent: 255 168 48;
+  --ink: 255 228 190;
+  --line: 116 74 28;
+  --muted: 178 134 92;
+  --data: 224 156 118;
+  --warn: 255 62 62;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg font-mono text-ink antialiased;
+    font-size: 13px;
+    margin: 0;
+    min-width: 1180px;
+  }
+
+  ::selection {
+    background: rgb(var(--accent) / 0.35);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--line));
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* Chamfered top-left and bottom-right. --c is the chamfer size. */
+  .chamfer {
+    clip-path: polygon(
+      var(--c, 12px) 0,
+      100% 0,
+      100% calc(100% - var(--c, 12px)),
+      calc(100% - var(--c, 12px)) 100%,
+      0 100%,
+      0 var(--c, 12px)
+    );
+  }
+  /* The inset 1px layer: its chamfer is smaller so the diagonal edge stays a 1px line. */
+  .chamfer-in {
+    --ci: calc(var(--c, 12px) - 0.586px);
+    clip-path: polygon(
+      var(--ci) 0,
+      100% 0,
+      100% calc(100% - var(--ci)),
+      calc(100% - var(--ci)) 100%,
+      0 100%,
+      0 var(--ci)
+    );
+  }
+
+  /* Soft glow, used on ACTIVE elements only. */
+  .glow-accent {
+    filter: drop-shadow(0 0 6px rgb(var(--accent) / 0.5));
+  }
+  .glow-warn {
+    filter: drop-shadow(0 0 6px rgb(var(--warn) / 0.55));
+  }
+  .glow-text-accent {
+    text-shadow: 0 0 10px rgb(var(--accent) / 0.55);
+  }
+
+  .knob-active .knob-svg {
+    filter: drop-shadow(0 0 4px rgb(var(--accent) / 0.55));
+  }
+  .knob-svg {
+    transition: filter 160ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
