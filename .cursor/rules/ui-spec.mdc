@@ -1,0 +1,111 @@
+---
+description: Concrete UI specs (tokens, type scale, sizes, component anatomy, layout) of the finished FEEDBACKYARD HUD. Use when matching this look in another project or changing exact visuals.
+alwaysApply: false
+---
+
+# FEEDBACKYARD UI spec (as built)
+
+The principles live in `ui-design-system.mdc`. This file is the **concrete spec**: exact tokens, sizes and anatomy, so the look can be reproduced or reused elsewhere.
+
+Reference screenshots (open them before designing anything similar), all in `docs/ui-reference/`:
+
+- `01-green-running-takes.png`: default green theme, loop running, two takes listed.
+- `02-green-recording.png`: recording state (warn color, timer, record level bar).
+- `03-cyan-theme.png`, `04-amber-theme.png`: the other two palettes.
+- `05-green-idle-compact.png`: idle (calm) state at 1440x900, compact layout.
+- `06-first-use-warning.png`: modal in the `warn` color.
+
+## Look in one sentence
+
+Near-black screen, hairline 1px outlines, one neon accent as flat fills, chamfered frames, circuit-style connector lines with dot terminals, uppercase wide-tracked labels. Calm when idle, glowing only where something is active.
+
+## Palettes
+
+RGB triplets as CSS variables, mapped to Tailwind tokens (`bg-bg`, `text-accent`, `border-line`, `bg-accent/15`, ...). Never hex in components.
+
+| Token | Green (default) | Cyan | Amber |
+| --- | --- | --- | --- |
+| `bg` (page) | 4 7 5 | 3 6 9 | 8 5 4 |
+| `panel` | 7 12 8 | 6 11 16 | 14 9 7 |
+| `accent` | 126 230 56 | 38 190 248 | 255 168 48 |
+| `ink` (primary text) | 214 255 186 | 200 240 255 | 255 228 190 |
+| `line` (hairlines) | 48 92 32 | 24 84 116 | 116 74 28 |
+| `muted` (labels, off state) | 114 164 92 | 98 150 176 | 178 134 92 |
+| `data` (secondary tint) | 78 206 188 | 150 222 238 | 224 156 118 |
+| `warn` | 255 90 40 | 255 100 50 | 255 62 62 |
+
+- `warn` is reserved for **record, panic, clip, danger**. Never for decoration.
+- Theme is switched with `data-theme` on `<html>` and persisted in localStorage.
+- Selection color: accent at 35%. Scrollbars: 6px, `line` thumb, transparent track.
+- Canvas drawing reads colors from a cached `getThemeColors()` and redraws on theme change.
+
+## Type
+
+- **Display:** Syncopate 400/700. Titles, logo, big button labels. Uppercase.
+- **Mono:** JetBrains Mono 400/500/700. Everything else: values, labels, readouts. Base body size 13px.
+- Scale: `label` 11px / 14px line, tracking 0.14em, uppercase. `readout` 13px / 16px, tracking 0.04em. `title` 12px / 16px, tracking 0.22em, bold, display face. Big button text 15px bold, tracking 0.22em.
+- Nothing smaller than 11px. Numbers use `tabular-nums`.
+- Muted text is for labels and off states. Values and active text use `ink` or `accent`.
+
+## Shape
+
+- All strokes 1px. Flat fills, no gradients, no blur backgrounds.
+- **Chamfer technique** (two stacked layers, CSS `clip-path`): outer layer filled with `line` color, inner layer inset 1px filled with `panel`/`bg`, its chamfer reduced by 0.586px so the diagonal stays 1px. Set size with `--c`.
+  - App frame 34px, panels 18px, buttons by size (xl 16, lg 12, md 9, sm 7).
+  - Chamfer is on top-left and bottom-right only.
+- Glow: `drop-shadow(0 0 6px accent/0.5)` (warn: 0.55) on **active** elements only. Knob being turned: 4px glow.
+- Spacing on a 4px grid. Panel gap 12px (8px compact). Panel body padding 16px (12px compact).
+
+## Layout
+
+- Single screen, 12-column grid inside the outer frame (outer padding 12px, frame padding 24px sides, 20px top, 24px bottom).
+- Rows: transport bar, then three panel rows. Row 1 auto height, row 2 236px, row 3 158px.
+- Compact mode below 1000px viewport height (custom Tailwind screen `short`): rows 204px and 134px, smaller gaps and paddings, nothing else changes.
+- Body min width 1180px. Desktop first.
+- Header: logo (asterisk mark + wide wordmark), a thin connector line with dot terminals, status text (engine state, sample rate), barcode strip, 3-way theme switch.
+
+## Components
+
+**Panel** (`Panel.tsx`): chamfered frame (18px). Square corners get 8px accent corner ticks outside the frame. Header row: hatch block (22x8, 3px stripes) + section number (`01`) in muted + title in display bold accent + `line` hairline filling the width + optional right slot + 5px accent dot terminal.
+
+**HudButton**: chamfered, uppercase. Variants: `accent`, `warn`, `ghost`. Sizes: xl 68px high, lg 52, md 40, sm 32. Idle = hairline stroke in color at 70% and `panel` fill. Hover = fill at 15%. Active/latched = solid flat fill in the color, text `bg`, soft glow. Disabled = 35% opacity.
+- START/STOP: xl, accent, filled while running, with chevron icon.
+- KICK: lg accent. PANIC: lg warn. RANDOMIZE: lg accent with asterisk icon. MUTATE/UNDO: md ghost. REC: lg warn, fills while recording and shows the timer.
+
+**Knob** (custom SVG): 36-segment ring (segments 68% on / 32% gap) around a thin dial with a needle. Lit segments use accent, unlit use `line`. Bipolar knobs light from center. Sizes (dial px / box px): xs 46/64, sm 56/72, md 76/92, lg 104/120. Below it: numeric readout (`readout`), above or below: label (`label`, muted). Lock icon at the top right of each knob. Chaos ghost marker shows the live value. Focus-visible: 2px accent outline.
+
+**SegmentedSelect**: row of small chamfer-free boxes with 1px `line` borders, selected = flat accent fill with `bg` text (LP/BP/HP, SIN/SQR/SAW/TRI).
+
+**Source card / toggle**: 12px checkbox-style square (6px inner fill when on), label uppercase, `ON/OFF` in muted at right. Off cards drop knobs to 45% opacity.
+
+**Ring gauge**: large segmented ring with the big percentage in the center (display face) and a small caption below. Hot segments at the end of the ring shift to `warn`.
+
+**Level meter**: 24 segments over 60 dB, two channels (L/R), accent below -12 dB, `warn` when hot, peak-hold segment, dB scale labels on the right, readout under it.
+
+**Scope / spectrum**: boxed canvas with `line` border and dashed grid, trace in accent, auto-gain tag in the corner. Spectrum below as thin bars with 100 / 1k / 10k labels. Idle shows a "STANDBY" label and rests (no redraw).
+
+**Take row**: `TAKE 01` label, small waveform canvas (display-normalized), duration, then PLAY / WAV / x buttons (sm ghost).
+
+**Modal**: dimmed page, chamfered box with `warn` stroke and icon, title in display face, `warn` solid primary action, ghost cancel.
+
+**Notices**: small toast bar at the bottom for engine messages.
+
+## Decoration (structural only)
+
+Hatch block (title tabs), chevron rows (`>>>>>>`), barcode strips, dot rows (history, level), small square trios, fan/asterisk/reticle icons. Use them where they mark structure or state. Never as wallpaper. Max about one decorative element per panel.
+
+## States
+
+- **Idle:** everything calm, canvases rest, no animation, meters at floor.
+- **Active/running:** accent fills and glow on the primary action and on live meters.
+- **Recording:** warn button, warn level bar, timer in warn.
+- **Danger/clip:** warn indicators light, limiter/clip lamps.
+- **Disabled:** 35% opacity, no pointer events.
+- **Focus:** 2px accent outline, 2px offset, always visible for keyboard.
+
+## Motion
+
+- Transitions: color 150ms or knob glow 160ms ease-out. Nothing else animates by default.
+- Live visuals (scope, spectrum, meters, ring, timers) run in `requestAnimationFrame` through refs and canvas/SVG attributes, never React state. Idle canvases stop redrawing.
+- `prefers-reduced-motion`: all CSS animation and transition off, value glides become instant.
+- Forbidden: scanlines, CRT curvature, flicker, moving backgrounds, parallax.
