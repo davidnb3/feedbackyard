@@ -1,0 +1,43 @@
+---
+paths:
+  - "src/audio/**"
+  - "public/worklets/**"
+  - "src/utils/dsp-math.ts"
+  - "src/utils/wav.ts"
+---
+
+# Audio and safety conventions
+
+Feedback can get dangerously loud. These rules are not optional.
+
+## Parameters
+
+- Never assign `AudioParam.value` directly while audio runs. Use the `smooth()` helper (`setTargetAtTime`) for every change, with a time constant that fits the parameter (delay time is slower so sweeps become pitch bends).
+- Parameter ranges, curves, safe randomize bounds and chaos amounts live only in `ParamDef`s.
+
+## Safety chain (must never be removed or bypassed)
+
+1. `tanh` saturator inside the loop, so the loop cannot grow without bound.
+2. DC blocker inside the loop.
+3. Master gain, then panic gain, then `DynamicsCompressor` limiter, then `safety-clip` worklet, then everything else (destination, analysers, recorder).
+4. Conservative default master level (-14 dB). Never raise the default.
+5. Every worklet checks for `NaN` and `Infinity`, outputs silence for that sample and posts `{ type: 'fault' }`. The engine reacts by rebuilding the loop (`LoopStage.reset()`) behind a short fade.
+6. PANIC cuts feedback, fades out, clears the loop (rebuilds the nodes) and stops. It must always work, even when other code throws. Escape is PANIC except while a modal is open.
+
+## Worklets (`public/worklets/`)
+
+- Plain JS, no imports. One processor per file, registered as `fy-<name>`: saturator, dc-blocker, safety-clip, pitch-shifter, reverb, recorder.
+- Handle a `'dispose'` message by returning `false` from `process`, so rebuilt nodes are released.
+- Handle mono and stereo input. Do not allocate in `process`.
+- Reverb wet output is compensated for comb decay (`wetComp` in `reverb.js`). Do not remove that; large sizes were far too hot without it.
+
+## Recording
+
+- The recorder taps the master **after** the safety clip. Stopping REC does not stop the loop.
+- Export is a hand-written 24-bit stereo PCM WAV (`src/utils/wav.ts`). No MP3, no bit-depth selector, no extra libraries. Files must open in a DAW without conversion.
+- Takes are held in memory (`takesStore`), capped at 10 minutes each (`MAX_RECORD_SECONDS`). PANIC and STOP flush an in-progress take.
+
+## Testing without hurting anyone
+
+- Set the master level low (for example -40 dB) **before** clicking START, whether testing by hand or in the browser. Never start real audio at full volume.
+- Sound quality cannot be judged without ears. Verify behavior (levels, NaN-free output, meters, recording length and WAV header) and say honestly what could not be verified.

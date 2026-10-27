@@ -1,5 +1,6 @@
 ---
 description: Concrete UI specs (tokens, type scale, sizes, component anatomy, layout) of the finished FEEDBACKYARD HUD. Use when matching this look in another project or changing exact visuals.
+globs: src/components/**,src/index.css,tailwind.config.js,src/utils/theme.ts,docs/ui-reference/**
 alwaysApply: false
 ---
 
@@ -62,7 +63,7 @@ RGB triplets as CSS variables, mapped to Tailwind tokens (`bg-bg`, `text-accent`
 - Rows: transport bar, then three panel rows. Row 1 auto height, row 2 236px, row 3 158px.
 - Compact mode below 1000px viewport height (custom Tailwind screen `short`): rows 204px and 134px, smaller gaps and paddings, nothing else changes.
 - Body min width 1180px. Desktop first.
-- Header: logo (asterisk mark + wide wordmark), a thin connector line with dot terminals, status text (engine state, sample rate), barcode strip, 3-way theme switch.
+- Header: Fan mark (also the favicon) + wide wordmark, a thin connector line with dot terminals, status text (engine state, sample rate), barcode strip, version `vX.Y.Z`, 3-way theme switch (GRN / CYN / AMB).
 
 ## Components
 
@@ -84,7 +85,7 @@ RGB triplets as CSS variables, mapped to Tailwind tokens (`bg-bg`, `text-accent`
 
 **Scope / spectrum**: boxed canvas with `line` border and dashed grid, trace in accent, auto-gain tag in the corner. Spectrum below as thin bars with 100 / 1k / 10k labels. Idle shows a "STANDBY" label and rests (no redraw).
 
-**Take row**: `TAKE 01` label, small waveform canvas (display-normalized), duration, then PLAY / WAV / x buttons (sm ghost).
+**Take row**: `TAKE 01` label, small waveform canvas (display-normalized to the take's own peak; audio is untouched), duration, then PLAY / WAV / x buttons (sm ghost).
 
 **Modal**: dimmed page, chamfered box with `warn` stroke and icon, title in display face, `warn` solid primary action, ghost cancel.
 
@@ -92,7 +93,7 @@ RGB triplets as CSS variables, mapped to Tailwind tokens (`bg-bg`, `text-accent`
 
 ## Decoration (structural only)
 
-Hatch block (title tabs), chevron rows (`>>>>>>`), barcode strips, dot rows (history, level), small square trios, fan/asterisk/reticle icons. Use them where they mark structure or state. Never as wallpaper. Max about one decorative element per panel.
+Hatch block (title tabs), chevron rows (`>>>>>>`), barcode strips, dot rows (history, level), small square trios, Fan (logo, favicon, spins while running), asterisk/reticle icons. Use them where they mark structure or state. Never as wallpaper. Max about one decorative element per panel.
 
 ## States
 

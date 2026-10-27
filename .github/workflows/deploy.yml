@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -17,18 +17,40 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # GITHUB_TOKEN commits do not retrigger workflows. Skip the bump if this run
+    # was started by the bot anyway (for example after adding a PAT later).
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Bump patch version
+        if: github.event_name == 'push' && github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip version]')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm version patch -m "chore: release v%s"
+
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+      - name: Push tag and GitHub Release
+        if: github.event_name == 'push' && github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip version]')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin HEAD:main --follow-tags
+          gh release create "v$(node -p "require('./package.json').version")" --generate-notes
 
   deploy:
     needs: build

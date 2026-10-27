@@ -1,0 +1,49 @@
+---
+paths:
+  - "src/components/**"
+  - "src/index.css"
+  - "tailwind.config.js"
+  - "src/utils/theme.ts"
+  - "src/hooks/useHudCanvas.ts"
+---
+
+# UI design system: retro-futuristic HUD
+
+Sci-fi HUD from an old space film, built with modern precision. The screenshots in `docs/ui-reference/` are the source of the look: hairline outlines, flat neon fills, chamfered frames, circuit-style connector lines with dot terminals, hatch blocks, chevron rows, barcode strips, dot rows, segmented rings and bars.
+
+Exact tokens, sizes and component anatomy live in `ui-spec.md`. Follow that file when changing visuals or matching this look elsewhere.
+
+## Color (one place to change the palette)
+
+- All colors are CSS variables in `src/index.css` (`:root[data-theme="green|cyan|amber"]`) as space-separated RGB triplets, mapped to Tailwind tokens in `tailwind.config.js`: `bg`, `panel`, `line`, `ink`, `muted`, `accent`, `data`, `warn`.
+- **One primary accent** per theme. **`warn` (orange-red) is only for clip, panic, record and danger states.** `data` is a restrained secondary tint for non-critical readouts. Never use raw hex or `rgb()` in components. Canvas code uses `getThemeColors()` from `src/utils/theme.ts`.
+- Default theme: phosphor green. Theme is a 3-way switch (GRN / CYN / AMB) in the header, stored in localStorage.
+
+## Shape and spacing
+
+- Hairlines are 1px everywhere. Flat fills for emphasis. A soft glow only on **active** elements (running loop, a knob being turned, clip). Never glow everything.
+- Spacing sits on a 4px grid. Panels use the `Panel` component (chamfered corners, corner ticks, title tab with a connector line and dot terminal). Do not hand-roll panel borders.
+- Decoration (`components/ui/Deco.tsx`) is structure and accent, never wallpaper. If it does not help the user understand the sound or the structure, leave it out.
+- Logo is the **Fan** (`Deco.tsx`), also used as `public/favicon.svg`. It spins slowly while the engine is running.
+
+## Type
+
+- Display face: Syncopate (wide, geometric) for titles and big labels. Mono: JetBrains Mono for values, small labels and readouts. Labels are uppercase with generous tracking.
+- Readable sizes only: no text below 11px.
+
+## Controls
+
+- Knobs are the custom SVG `Knob`: segmented ring around a thin dial, numeric readout, label, per-knob lock. They support drag, wheel, arrow keys (Shift = fine, PageUp/PageDown = coarse), double-click to reset, and a visible focus state. Clarity beats decoration. Pointer capture may fail; the drag must still work.
+- The big controls (START/STOP, KICK, PANIC, RANDOMIZE, REC) must stay unmistakable.
+
+## Layout
+
+- Single-screen 12-column grid. Compact variant below 1000px viewport height (Tailwind screen `short`): tighter rows and gaps so it still fits at 1440×900. Do not introduce scrolling at that size.
+- Header: Fan + wordmark, connector line with dots, engine status, sample rate, barcode, **version** (`v{__APP_VERSION__}`), theme switch.
+
+## Motion
+
+- Idle means calm and nearly static. Nothing flickers, scrolls or moves without reason. No scanlines, CRT distortion or moving backgrounds.
+- Meters, scope, spectrum, ring gauge, timers and chaos ghost markers are driven by `requestAnimationFrame` with refs (`useHudCanvas`), never React state. Idle canvases rest.
+- Respect `prefers-reduced-motion` (CSS and `useReducedMotion`): no decorative animation, instant instead of tweened randomize.
+- Interactive elements keep a keyboard-visible focus state and proper ARIA roles.

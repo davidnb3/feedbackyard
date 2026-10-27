@@ -35,6 +35,9 @@ export function Header() {
           <span>Stereo</span>
         </span>
         <Barcode seed={3} bars={20} width={64} height={12} className="text-accent/70" />
+        <span className="tabular-nums text-muted" title={`Version ${__APP_VERSION__}`}>
+          v{__APP_VERSION__}
+        </span>
       </div>
       <ThemeSwitch />
     </header>

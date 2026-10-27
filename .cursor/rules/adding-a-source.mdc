@@ -8,6 +8,8 @@ alwaysApply: false
 
 Adding a source means **one new class and one registry entry**. Nothing else changes: the source selector, the knobs, randomize, snapshots and engine routing are all generated from the registry.
 
+Current sources in `SOURCE_REGISTRY`: oscillator (default on), noise (off), wanderer (off), exciter / kick (one-shot, fired by KICK).
+
 1. Create `src/audio/sources/MySource.ts`:
    - `class MySource extends BaseSource` (see `BaseSource.ts`). Create nodes in the constructor, connect them into `this.level`, implement `start()`, `stop()`, `setParam(key, value)`, and optionally `trigger()`.
    - Export a `mySourceDef: SourceDef` with `id`, `label`, `defaultEnabled`, `params` (a list of `ParamDef`s whose ids are prefixed `"<id>."`) and `create(ctx)`.

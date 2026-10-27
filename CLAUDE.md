@@ -1,0 +1,55 @@
+# FEEDBACKYARD: project context
+
+A browser instrument for **internal audio feedback loops** (the "send a return track into itself" trick). The goal is weird, unpredictable sound design (noise, randomness, happy accidents), not music. The user steers the loop with knobs, records the master output, and downloads 24-bit WAV takes to use as raw material in a DAW.
+
+Stack: Vite, React 18, TypeScript (strict), Tailwind CSS 3, Zustand, Web Audio API with AudioWorklet. **No audio libraries and no other runtime dependencies** (WAV is hand-written). Target: desktop Chromium. Live site is GitHub Pages, deployed from `main`.
+
+## Layout
+
+```
+public/worklets/        plain-JS AudioWorklet processors (no build step, no imports)
+public/favicon.svg      the Fan mark (same as the header logo)
+src/audio/              AudioEngine singleton + one class per DSP stage
+src/audio/sources/      Source classes + SOURCE_REGISTRY (osc, noise, wander, kick)
+src/store/              Zustand: params, engine status, takes, snapshots, theme
+src/hooks/              useParam, useHudCanvas, useReducedMotion
+src/components/ui/      HUD primitives (Knob, HudButton, Panel, meters, Deco)
+src/components/stages/  SOURCE, LOOP, MOD/CHAOS, FX, SCOPE/SPECTRUM, OUTPUT, RECORD/TAKES, MEMORY
+src/components/layout/  App frame, header, transport, theme switch, warning modal, notices
+src/utils/              dsp-math, theme colors, wav encoder, motion
+docs/ui-reference/      screenshots of the finished HUD
+.github/workflows/      Pages deploy + patch bump on every push to main
+PLAN.md                 the approved plan
+README.md               user-facing overview
+```
+
+## Signal flow
+
+```
+sources -> input -> [ DelayNode -> pitch shifter -> filter -> saturator(tanh) -> DC blocker -> reverb -> feedback gain ] -> back to the delay input
+loop tap -> dry/wet -> master -> panic gain -> limiter -> safety clip -> analysers / recorder / destination
+```
+
+The `DelayNode` is what makes the cycle legal. The loop is stereo. Its minimum delay in a cycle is one render quantum (128 samples, about 3 ms).
+
+## Conventions
+
+- Every parameter is declared once as a `ParamDef` (`src/audio/core-params.ts` or inside a source definition). The UI, randomize, mutate, chaos, snapshots and the engine all derive from these definitions. Never hardcode a range anywhere else.
+- Zustand holds **values and locks**. The AudioEngine is not React state: components call store actions, and the store forwards to `engine.setBase(id, value)`.
+- Anything that animates at frame rate (scope, spectrum, meters, ring gauge, timers, chaos ghost markers) runs in `requestAnimationFrame` through `useHudCanvas` and refs, never through React state.
+- The LATER version adds a file player and microphone input as new sources. Do not build upload or mic UI now, not even disabled placeholders. See `.claude/rules/adding-a-source.md`.
+- `npm run build` and `npm run lint` must pass before finishing any task.
+
+## Versioning and deploy
+
+- The header shows `v{version}` next to the barcode. The version is inlined at build time from `package.json` as `__APP_VERSION__` (`vite.config.ts`).
+- Do **not** bump `package.json` by hand and do **not** add commitlint. On every push to `main`, `.github/workflows/deploy.yml` runs `npm version patch`, tags `vX.Y.Z`, creates a GitHub Release, then lint/build/deploys Pages. `workflow_dispatch` redeploys without bumping. Put `[skip version]` in the commit message to push without a bump; `[skip ci]` skips the whole workflow.
+- Local `npm run dev` shows whatever is currently in `package.json`.
+
+## Known limits (do not "fix" these unless asked)
+
+- Desktop Chromium only.
+- Shortest delay is ~3 ms (Web Audio needs 128 samples in a feedback cycle).
+- Pitch shifter is granular; artifacts are part of the sound.
+- Takes live in memory (10 min cap) and are lost on reload.
+- Snapshots include the master level.
