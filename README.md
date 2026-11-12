@@ -1,5 +1,7 @@
 # FEEDBACKYARD
 
+![FEEDBACKYARD running: source, loop, mod/chaos, FX, scope, output, takes and memory panels](docs/ui-reference/01-green-running-takes.png)
+
 A browser instrument for **internal audio feedback loops**.
 
 You know the trick: send a return track into itself and let it howl. FEEDBACKYARD is that, as a small sci-fi control panel. You steer the loop with knobs, record what comes out, and download the takes as WAV files to chop up in your DAW.
