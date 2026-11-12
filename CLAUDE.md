@@ -10,7 +10,7 @@ Stack: Vite, React 18, TypeScript (strict), Tailwind CSS 3, Zustand, Web Audio A
 public/worklets/        plain-JS AudioWorklet processors (no build step, no imports)
 public/favicon.svg      the Fan mark (same as the header logo)
 src/audio/              AudioEngine singleton + one class per DSP stage
-src/audio/sources/      Source classes + SOURCE_REGISTRY (osc, noise, wander, kick)
+src/audio/sources/      Source classes + SOURCE_REGISTRY (osc, noise, wander, kick, file)
 src/store/              Zustand: params, engine status, takes, snapshots, theme
 src/hooks/              useParam, useHudCanvas, useReducedMotion
 src/components/ui/      HUD primitives (Knob, HudButton, Panel, meters, Deco)
@@ -37,7 +37,7 @@ The `DelayNode` is what makes the cycle legal. The loop is stereo. Its minimum d
 - Every parameter is declared once as a `ParamDef` (`src/audio/core-params.ts` or inside a source definition). The UI, randomize, mutate, chaos, snapshots and the engine all derive from these definitions. Never hardcode a range anywhere else.
 - Zustand holds **values and locks**. The AudioEngine is not React state: components call store actions, and the store forwards to `engine.setBase(id, value)`.
 - Anything that animates at frame rate (scope, spectrum, meters, ring gauge, timers, chaos ghost markers) runs in `requestAnimationFrame` through `useHudCanvas` and refs, never through React state.
-- The LATER version adds a file player and microphone input as new sources. Do not build upload or mic UI now, not even disabled placeholders. See `.claude/rules/adding-a-source.md`.
+- The file source (user-loaded sound, looped) exists. A microphone input is still LATER: do not build mic UI until it is requested. See `.claude/rules/adding-a-source.md`.
 - `npm run build` and `npm run lint` must pass before finishing any task.
 
 ## Versioning and deploy
@@ -51,5 +51,5 @@ The `DelayNode` is what makes the cycle legal. The loop is stereo. Its minimum d
 - Desktop Chromium only.
 - Shortest delay is ~3 ms (Web Audio needs 128 samples in a feedback cycle).
 - Pitch shifter is granular; artifacts are part of the sound.
-- Takes live in memory (10 min cap) and are lost on reload.
+- Takes live in memory (10 min cap) and are lost on reload. The loaded file (max 2 min) is also lost on reload.
 - Snapshots include the master level.

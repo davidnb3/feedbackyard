@@ -15,7 +15,7 @@ You know the trick: send a return track into itself and let it howl. FEEDBACKYAR
 
 ## What it does
 
-1. A **source** (oscillator, noise, wanderer, or a one-shot kick) feeds the loop.
+1. A **source** (oscillator, noise, wanderer, your own audio file, or a one-shot kick) feeds the loop.
 2. The loop runs **delay, pitch shift, filter, saturation and reverb**, then feeds itself back.
 3. A tap of the loop goes to the output, through a limiter and a safety clipper.
 4. You **record** the output and download each take as a 24-bit stereo WAV.
@@ -78,6 +78,13 @@ Each source has an on/off switch. Mix and match.
 **Wanderer**
 - **Center**: the pitch it wanders around.
 - **Spread**: how far it wanders, in octaves.
+- **Level**: how much goes into the loop.
+
+**File** (load or drop your own sound, up to 2 minutes; it loops)
+- **Direction**: forward or reversed.
+- **Start**: where the loop window begins inside the file.
+- **Size**: length of the loop window. Tiny windows turn the file into a granular smear.
+- **Pitch**: transpose by up to 2 octaves either way.
 - **Level**: how much goes into the loop.
 
 **Exciter** (fires on KICK)

@@ -28,6 +28,10 @@ export class SourceStage {
     this.sources.get(sourceId)?.setEnabled(on)
   }
 
+  loadBuffer(sourceId: string, buffer: AudioBuffer): void {
+    this.sources.get(sourceId)?.loadBuffer?.(buffer)
+  }
+
   trigger(): void {
     this.sources.forEach((s) => s.trigger?.())
   }

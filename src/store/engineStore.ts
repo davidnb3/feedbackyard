@@ -15,10 +15,12 @@ interface EngineStore {
   recording: boolean
   warningAcknowledged: boolean
   notice: Notice | null
+  fileName: string | null
   acknowledgeWarning(): void
   start(): Promise<void>
   stop(): Promise<void>
   toggle(): Promise<void>
+  loadFile(file: File): Promise<void>
   dismissNotice(): void
 }
 
@@ -38,6 +40,7 @@ export const useEngineStore = create<EngineStore>((set, get) => ({
   recording: false,
   warningAcknowledged: loadWarned(),
   notice: null,
+  fileName: null,
 
   acknowledgeWarning: () => {
     try {
@@ -51,6 +54,7 @@ export const useEngineStore = create<EngineStore>((set, get) => ({
   start: () => engine.start(useParamStore.getState().snapshot()),
   stop: () => engine.stop(),
   toggle: () => (get().status === 'running' ? get().stop() : get().start()),
+  loadFile: (file) => engine.loadFile(file),
   dismissNotice: () => set({ notice: null }),
 }))
 
@@ -73,6 +77,11 @@ engine.subscribe((e) => {
       break
     case 'fault':
       showNotice('warn', `NaN IN ${e.node.toUpperCase()}: LOOP RESET AUTOMATICALLY`)
+      break
+    case 'file':
+      useEngineStore.setState({ fileName: e.name })
+      useParamStore.getState().setEnabled('file', true)
+      showNotice('info', `FILE LOADED: ${e.name.toUpperCase()} (${e.seconds.toFixed(1)} S)`)
       break
     case 'error':
       showNotice('warn', `AUDIO ERROR: ${e.message}`)

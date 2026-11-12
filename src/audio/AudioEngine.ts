@@ -17,6 +17,7 @@ export type EngineEvent =
   | { type: 'panic' }
   | { type: 'take'; take: RecordedTake }
   | { type: 'recording'; on: boolean }
+  | { type: 'file'; name: string; seconds: number }
   | { type: 'error'; message: string }
 
 type F32 = Float32Array<ArrayBuffer>
@@ -50,6 +51,7 @@ const EMPTY_FRAME: Frame = {
 }
 
 export const MAX_RECORD_SECONDS = 10 * 60
+export const MAX_FILE_SECONDS = 120
 
 const TICK_MS = 50
 const LOOP_KEY_SET = new Set<string>(LOOP_KEYS)
@@ -70,6 +72,7 @@ class AudioEngine {
   private loop: LoopStage | null = null
   private out: OutputStage | null = null
   private recorder: Recorder | null = null
+  private fileBuffer: AudioBuffer | null = null
   private readonly chaos = new ChaosEngine()
 
   private readonly base = new Map<string, number>()
@@ -145,6 +148,7 @@ class AudioEngine {
     this.out = new OutputStage(ctx, onFault)
     this.mod = new ModStage(ctx)
     this.sources = new SourceStage(ctx)
+    if (this.fileBuffer) this.sources.loadBuffer('file', this.fileBuffer)
     this.loop = new LoopStage(ctx, this.mod, onFault)
     this.recorder = new Recorder(ctx)
 
@@ -189,6 +193,37 @@ class AudioEngine {
     this.loop?.cutFeedback()
     this.emit({ type: 'panic' })
     void this.shutdown(0.012, 140)
+  }
+
+  /**
+   * Decode a user file and hand it to the file source. Works before the engine has started:
+   * the buffer is kept and applied when the sources are built. Decoding uses an offline context,
+   * and a buffer can be played by any context whatever its sample rate.
+   */
+  async loadFile(file: File): Promise<void> {
+    try {
+      const decoded = await new OfflineAudioContext(2, 1, 44100).decodeAudioData(await file.arrayBuffer())
+      if (decoded.duration > MAX_FILE_SECONDS) {
+        this.emit({ type: 'error', message: `File is longer than ${MAX_FILE_SECONDS / 60} minutes` })
+        return
+      }
+      let peak = 0
+      for (let c = 0; c < decoded.numberOfChannels; c++) {
+        for (const x of decoded.getChannelData(c)) peak = Math.max(peak, Math.abs(x))
+      }
+      if (peak > 0) {
+        const g = 0.9 / peak
+        for (let c = 0; c < decoded.numberOfChannels; c++) {
+          const d = decoded.getChannelData(c)
+          for (let i = 0; i < d.length; i++) d[i] *= g
+        }
+      }
+      this.fileBuffer = decoded
+      this.sources?.loadBuffer('file', decoded)
+      this.emit({ type: 'file', name: file.name, seconds: decoded.duration })
+    } catch {
+      this.emit({ type: 'error', message: `Could not decode ${file.name}` })
+    }
   }
 
   kick(): void {

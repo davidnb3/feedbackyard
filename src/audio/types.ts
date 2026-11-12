@@ -44,6 +44,8 @@ export interface Source {
   setParam(key: string, value: number): void
   /** Optional one-shot (for example the kick exciter). */
   trigger?(): void
+  /** Optional: sources that play a user-supplied sound (the file player). */
+  loadBuffer?(buffer: AudioBuffer): void
   dispose(): void
 }
 
@@ -53,6 +55,8 @@ export interface SourceDef {
   defaultEnabled: boolean
   /** true = has a trigger() and no on/off switch (the exciter). */
   trigger?: boolean
+  /** true = plays a user-loaded audio file; the card gets a load button and drop target. */
+  file?: boolean
   /** Param ids must be prefixed with "<id>.". */
   params: readonly ParamDef[]
   create(ctx: AudioContext): Source
